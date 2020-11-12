@@ -17,7 +17,7 @@ dbPassword = config["db"]["password"]
 
 mydb = mysql.connector.connect(host=dbHost, user=dbUser, password=dbPassword, database=dbDatabase)
 bot = commands.Bot(command_prefix='!')
-    
+
 @bot.command()
 async def ping(ctx):
     await ctx.send("pong")
@@ -54,14 +54,17 @@ async def sql(ctx,arg):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def sync_roles(ctx):
-    cursor = mydb.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS roles (id varchar(100), name varchar(100), assignable bool);")
-    cursor.execute("TRUNCATE TABLE roles;")
-    roles = ctx.guild.roles
-    sql = 'INSERT INTO roles (id, name, assignable) VALUES ' + ", ".join(["('{}', '{}', {})".format(r.id, r.name, 'false' if r.permissions.manage_channels or r.permissions.administrator or r.managed else 'true') for r in roles])
-    cursor.execute(sql)
-    cursor.execute("SELECT * FROM roles;");
-    await ctx.send(cursor.fetchall())
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS roles (id varchar(100), name varchar(100), assignable bool);")
+        cursor.execute("TRUNCATE TABLE roles;")
+        roles = ctx.guild.roles
+        sql = 'INSERT INTO roles (id, name, assignable) VALUES ' + ", ".join(["('{}', '{}', {})".format(r.id, r.name, 'false' if r.permissions.manage_channels or r.permissions.administrator or r.managed else 'true') for r in roles])
+        cursor.execute(sql)
+        cursor.execute("SELECT * FROM roles;");
+        await ctx.send(cursor.fetchall())
+    except mysql.connector.Error as err:
+        await ctx.send(err.msg)
 
 @bot.command()
 @commands.has_permissions(manage_roles=True)
@@ -85,10 +88,12 @@ async def react_role(ctx, *args):
     msg = await channel.fetch_message(messageId)
     await msg.add_reaction(react)
 
-    cursor = mydb.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;")
-    cursor.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
-    cursor.execute("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId))
-    await ctx.send(cursor.fetchall())
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        cursor.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
+        cursor.execute("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId))
+        await ctx.send(cursor.fetchall())
+    except mysql.connector.Error as err:                                                                                        await ctx.send(err.msg)
 
 bot.run(discordToken)
