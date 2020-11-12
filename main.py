@@ -102,38 +102,47 @@ async def react_role(ctx, *args):
 def getReactRoleId(messageId, react):
     cursor = mydb.cursor()
     cursor.execute(create_roleReacts)
-    curson.execute("SELECT EXISTS(SELECT 1 FROM mysql.proc p WHERE db = 'PAKBot' AND name = 'sp_getReactRoleId')"
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM mysql.proc p WHERE db = 'PAKBot' AND name = 'sp_getReactRoleId')")
     spExists = cursor.fetchall()
-    if !spExists[0]:
-        curor.execute(("CREATE PROCEDURE sp_getReactRoleId "
-            "channelId varchar(100), messageId varchar(100), react varchar(100) "
-            "AS "
-            "SELECT TOP 1 roleId FROM roleReacts r "
-            "WHERE r.messageId = messageId AND r.react = react"))
-    cursor.execute("sp_getReactRoleId {}, {}".format(messageId, react))
-    roleId = cursor.fetchall()
-    if len(roleId) == 1
-        return roleId[0]
-    
+    if not spExists[0][0]:
+        cursor.execute("""
+            CREATE PROCEDURE sp_getReactRoleId (IN messageId varchar(100), IN react varchar(100), OUT roleId VARCHAR(100))
+                BEGIN
+                    SELECT
+                        roleReacts.roleId 
+                    INTO roleId
+                    FROM roleReacts
+                    WHERE roleReacts.messageId = messageId AND roleReacts.react = react
+                    LIMIT 1;
+                END
+            """)
+    roleId = 0
+    cursor.callproc("sp_getReactRoleId", [messageId, react, roleId])
+    result = cursor.stored_results
+    if len(result) > 0:
+        role = result.fetchall()
+        if len(role) > 0:
+            roleId = role[0][0]
+            print(roleId)
 @bot.event
 async def on_raw_reaction_add(payload):
+    channel = bot.get_channel(payload.channel_id)
     messageId = payload.message_id
     userId = payload.user_id
     emoji = payload.emoji
     
     if emoji.is_custom_emoji():
         react = emoji.id
-    else
+    else:
         react = emoji.name
 
     try:
         roleId = getReactRoleId(messageId, react)
         if roleId:
-            channel = bot.get_channel(payload.channel_id)
             role = bot.get_role(int(roleId))
             await channel.send(role.name)
     except mysql.connector.Error as err:
-        await ctx.send(err.msg)
+        await channel.send(err.msg)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
