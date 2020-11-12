@@ -15,6 +15,8 @@ dbDatabase = config["db"]["database"]
 dbUser = config["db"]["user"]
 dbPassword = config["db"]["password"]
 
+create_roleReacts = "CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
 mydb = mysql.connector.connect(host=dbHost, user=dbUser, password=dbPassword, database=dbDatabase)
 bot = commands.Bot(command_prefix='!')
 
@@ -90,11 +92,15 @@ async def react_role(ctx, *args):
 
     try:
         cursor = mydb.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        cursor.execute(create_roleReacts)
         cursor.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
         cursor.execute("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId))
         await ctx.send(cursor.fetchall())
     except mysql.connector.Error as err:
         await ctx.send(err.msg)
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    await reaction.channel.send(reaction.emoji)
 
 bot.run(discordToken)
