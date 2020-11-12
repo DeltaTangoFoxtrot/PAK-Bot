@@ -100,7 +100,11 @@ async def react_role(ctx, *args):
         await ctx.send(err.msg)
 
 @bot.event
-async def on_reaction_add(reaction, user):
-    foo = 1
+async def on_raw_reaction_add(payload):
+    print("foo")
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    print("bar")
 
 bot.run(discordToken)
