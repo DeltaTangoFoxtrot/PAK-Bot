@@ -101,6 +101,6 @@ async def react_role(ctx, *args):
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    await reaction.channel.send(reaction.emoji)
+    foo = 1
 
 bot.run(discordToken)
