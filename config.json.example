@@ -1,0 +1,9 @@
+{
+	"token" : "yourTokenHere",
+	"db" : {
+		"host" : "fizz",
+		"database" : "buzz",
+		"user" : "foo",
+		"password" : "bar"
+	}
+}
