@@ -94,6 +94,7 @@ async def react_role(ctx, *args):
         cursor.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
         cursor.execute("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId))
         await ctx.send(cursor.fetchall())
-    except mysql.connector.Error as err:                                                                                        await ctx.send(err.msg)
+    except mysql.connector.Error as err:
+        await ctx.send(err.msg)
 
 bot.run(discordToken)
