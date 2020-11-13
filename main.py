@@ -15,10 +15,14 @@ dbDatabase = config["db"]["database"]
 dbUser = config["db"]["user"]
 dbPassword = config["db"]["password"]
 
-create_roleReacts = "CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;"
+create_roleReacts = """CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) 
+    ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;"""
+
+intents = discord.Intents.default()
+intents.members = True
 
 mydb = mysql.connector.connect(host=dbHost, user=dbUser, password=dbPassword, database=dbDatabase)
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.command()
 async def ping(ctx):
@@ -106,30 +110,27 @@ def getReactRoleId(messageId, react):
     spExists = cursor.fetchall()
     if not spExists[0][0]:
         cursor.execute("""
-            CREATE PROCEDURE sp_getReactRoleId (IN messageId varchar(100), IN react varchar(100), OUT roleId VARCHAR(100))
+            CREATE PROCEDURE sp_getReactRoleId (IN messageId varchar(100), IN react varchar(100) CHARSET utf8mb4, OUT roleId VARCHAR(100))
                 BEGIN
                     SELECT
-                        roleReacts.roleId 
+                       roleReacts.roleId 
                     INTO roleId
                     FROM roleReacts
                     WHERE roleReacts.messageId = messageId AND roleReacts.react = react
                     LIMIT 1;
                 END
             """)
-    roleId = 0
-    cursor.callproc("sp_getReactRoleId", [messageId, react, roleId])
-    result = cursor.stored_results
-    if len(result) > 0:
-        role = result.fetchall()
-        if len(role) > 0:
-            roleId = role[0][0]
-            print(roleId)
+    result = cursor.callproc("sp_getReactRoleId", [messageId, react, 0])
+    return result[2]
+
 @bot.event
 async def on_raw_reaction_add(payload):
     channel = bot.get_channel(payload.channel_id)
+    guild = channel.guild
     messageId = payload.message_id
     userId = payload.user_id
     emoji = payload.emoji
+    member = guild.get_member(userId)
     
     if emoji.is_custom_emoji():
         react = emoji.id
@@ -139,13 +140,31 @@ async def on_raw_reaction_add(payload):
     try:
         roleId = getReactRoleId(messageId, react)
         if roleId:
-            role = bot.get_role(int(roleId))
-            await channel.send(role.name)
+            role = guild.get_role(int(roleId))
+            await member.add_roles(role)
     except mysql.connector.Error as err:
         await channel.send(err.msg)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    print("bar")
+    channel = bot.get_channel(payload.channel_id)
+    guild = channel.guild
+    messageId = payload.message_id
+    userId = payload.user_id
+    emoji = payload.emoji
+    member = guild.get_member(userId)
+
+    if emoji.is_custom_emoji():
+        react = emoji.id
+    else:
+        react = emoji.name
+
+    try:
+        roleId = getReactRoleId(messageId, react)
+        if roleId:
+            role = guild.get_role(int(roleId))
+            await member.remove_roles(role)
+    except mysql.connector.Error as err:
+        await channel.send(err.msg)
 
 bot.run(discordToken)
