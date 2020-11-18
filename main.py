@@ -67,7 +67,7 @@ create_sp_getReactRoleId = """CREATE PROCEDURE sp_getReactRoleId (IN messageId v
 intents = discord.Intents.default()
 intents.members = True
 
-mydb = dbConnection(dbHost, dbUser, dbPassword, dbDatabase)
+mydb = dbConnection(dbHost, dbDatabase, dbUser, dbPassword)
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 
