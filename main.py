@@ -6,6 +6,42 @@ import sys
 import discord
 from discord.ext import commands
 
+class dbConnection:
+    def __init__(self, host, database, user, password):
+        self.db = mysql.connector.connect(host=host, user=user, password=password, database=database)
+        self.db.close()
+    def select(self, query):
+        try:
+            self.db.connect()
+            cursor = self.db.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            cursor.close()
+            self.db.close()
+            return result
+        except mysql.connector.Error as err:
+            return err.msg
+    def execute(self, query):
+        try:
+            self.db.connect()
+            cursor = self.db.cursor()
+            cursor.execute(query)
+            cursor.close()
+            self.db.close()
+            return "gucci"
+        except mysql.connector.Error as err:
+            return err.msg
+    def callproc(self, query, args):
+        try:
+            self.db.connect()
+            cursor = self.db.cursor()
+            result = cursor.callproc(query, args)
+            cursor.close()
+            self.db.close()
+            return result
+        except mysql.connector.Error as err:
+            return err.msg
+
 with open('config.json') as f:
     config = json.load(f)
 
@@ -17,12 +53,24 @@ dbPassword = config["db"]["password"]
 
 create_roleReacts = """CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) 
     ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;"""
+    
+create_sp_getReactRoleId = """CREATE PROCEDURE sp_getReactRoleId (IN messageId varchar(100), IN react varchar(100) CHARSET utf8mb4, OUT roleId VARCHAR(100))
+    BEGIN
+        SELECT
+           roleReacts.roleId 
+        INTO roleId
+        FROM roleReacts
+        WHERE roleReacts.messageId = messageId AND roleReacts.react = react
+        LIMIT 1;
+    END"""
 
 intents = discord.Intents.default()
 intents.members = True
 
-mydb = mysql.connector.connect(host=dbHost, user=dbUser, password=dbPassword, database=dbDatabase)
+mydb = dbConnection(dbHost, dbUser, dbPassword, dbDatabase)
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+
 
 @bot.command()
 async def ping(ctx):
@@ -47,31 +95,21 @@ async def clear(ctx, number):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def sql(ctx,arg):
-    try:
-        cursor = mydb.cursor()
-        cursor.execute(arg)
-        if re.match("^select", arg.strip(), re.I):
-            await ctx.send(cursor.fetchall())
-        else:
-            await ctx.send("gucci")
-    except mysql.connector.Error as err:
-        await ctx.send(err.msg)
+    if re.match("^select", arg.strip(), re.I):
+        await ctx.send(mydb.select(arg))
+    else:
+        await ctx.send(mydb.execute(arg))
 
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def sync_roles(ctx):
-    try:
-        cursor = mydb.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS roles (id varchar(100), name varchar(100), assignable bool);")
-        cursor.execute("TRUNCATE TABLE roles;")
-        roles = ctx.guild.roles
-        sql = 'INSERT INTO roles (id, name, assignable) VALUES ' + ", ".join(["('{}', '{}', {})".format(r.id, r.name, 'false' if r.permissions.manage_channels or r.permissions.administrator or r.managed else 'true') for r in roles])
-        cursor.execute(sql)
-        cursor.execute("SELECT * FROM roles;");
-        await ctx.send(cursor.fetchall())
-    except mysql.connector.Error as err:
-        await ctx.send(err.msg)
-
+    mydb.execute("CREATE TABLE IF NOT EXISTS roles (id varchar(100), name varchar(100), assignable bool);")
+    mydb.execute("TRUNCATE TABLE roles;")
+    roles = ctx.guild.roles
+    sql = 'INSERT INTO roles (id, name, assignable) VALUES ' + ", ".join(["('{}', '{}', {})".format(r.id, r.name, 'false' if r.permissions.manage_channels or r.permissions.administrator or r.managed else 'true') for r in roles])
+    mydb.execute(sql)
+    await ctx.send(mydb.select("SELECT * FROM roles;"))
+    
 @bot.command()
 @commands.has_permissions(manage_roles=True)
 async def react_role(ctx, *args):
@@ -93,34 +131,17 @@ async def react_role(ctx, *args):
     channel = bot.get_channel(channelId)
     msg = await channel.fetch_message(messageId)
     await msg.add_reaction(react)
-
-    try:
-        cursor = mydb.cursor()
-        cursor.execute(create_roleReacts)
-        cursor.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
-        cursor.execute("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId))
-        await ctx.send(cursor.fetchall())
-    except mysql.connector.Error as err:
-        await ctx.send(err.msg)
+    
+    mydb.execute(create_roleReacts)
+    mydb.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
+    await ctx.send(mydb.select("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId)))
 
 def getReactRoleId(messageId, react):
-    cursor = mydb.cursor()
-    cursor.execute(create_roleReacts)
-    cursor.execute("SELECT EXISTS(SELECT 1 FROM mysql.proc p WHERE db = 'PAKBot' AND name = 'sp_getReactRoleId')")
-    spExists = cursor.fetchall()
+    mydb.execute(create_roleReacts)
+    spExists = mydb.select("SELECT EXISTS(SELECT 1 FROM mysql.proc p WHERE db = 'PAKBot' AND name = 'sp_getReactRoleId')")
     if not spExists[0][0]:
-        cursor.execute("""
-            CREATE PROCEDURE sp_getReactRoleId (IN messageId varchar(100), IN react varchar(100) CHARSET utf8mb4, OUT roleId VARCHAR(100))
-                BEGIN
-                    SELECT
-                       roleReacts.roleId 
-                    INTO roleId
-                    FROM roleReacts
-                    WHERE roleReacts.messageId = messageId AND roleReacts.react = react
-                    LIMIT 1;
-                END
-            """)
-    result = cursor.callproc("sp_getReactRoleId", [messageId, react, 0])
+        mydb.execute(create_sp_getReactRoleId)
+    result = mydb.callproc("sp_getReactRoleId", [messageId, react, 0])
     return result[2]
 
 @bot.event
@@ -136,14 +157,11 @@ async def on_raw_reaction_add(payload):
         react = emoji.id
     else:
         react = emoji.name
-
-    try:
-        roleId = getReactRoleId(messageId, react)
-        if roleId:
-            role = guild.get_role(int(roleId))
-            await member.add_roles(role)
-    except mysql.connector.Error as err:
-        await channel.send(err.msg)
+        
+    roleId = getReactRoleId(messageId, react)
+    if roleId:
+        role = guild.get_role(int(roleId))
+        await member.add_roles(role)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
@@ -159,12 +177,9 @@ async def on_raw_reaction_remove(payload):
     else:
         react = emoji.name
 
-    try:
-        roleId = getReactRoleId(messageId, react)
-        if roleId:
-            role = guild.get_role(int(roleId))
-            await member.remove_roles(role)
-    except mysql.connector.Error as err:
-        await channel.send(err.msg)
+    roleId = getReactRoleId(messageId, react)
+    if roleId:
+        role = guild.get_role(int(roleId))
+        await member.remove_roles(role)
 
 bot.run(discordToken)
