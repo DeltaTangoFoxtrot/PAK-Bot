@@ -2,6 +2,7 @@ import json
 import mysql.connector
 import re
 import sys
+import emoji
 
 import discord
 from discord.ext import commands
@@ -21,11 +22,13 @@ class dbConnection:
             return result
         except mysql.connector.Error as err:
             return err.msg
-    def execute(self, query):
+    def execute(self, query, commit=False):
         try:
             self.db.connect()
             cursor = self.db.cursor()
             cursor.execute(query)
+            if commit:
+                self.db.commit()
             cursor.close()
             self.db.close()
             return "gucci"
@@ -107,7 +110,7 @@ async def sync_roles(ctx):
     mydb.execute("TRUNCATE TABLE roles;")
     roles = ctx.guild.roles
     sql = 'INSERT INTO roles (id, name, assignable) VALUES ' + ", ".join(["('{}', '{}', {})".format(r.id, r.name, 'false' if r.permissions.manage_channels or r.permissions.administrator or r.managed else 'true') for r in roles])
-    mydb.execute(sql)
+    mydb.execute(sql, commit=True)
     await ctx.send(mydb.select("SELECT * FROM roles;"))
     
 @bot.command()
@@ -122,7 +125,7 @@ async def react_role(ctx, *args):
     if args[3].isdigit():
         reactId = int(args[3])
         react = bot.get_emoji(reactId)
-    elif len(args[3]) == 1:
+    elif bool(emoji.get_emoji_regexp().search(args[3])):
         react = args[3]
     else:
         await ctx.send("invalid react")
@@ -133,7 +136,8 @@ async def react_role(ctx, *args):
     await msg.add_reaction(react)
     
     mydb.execute(create_roleReacts)
-    mydb.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if len(args[3]) == 1 else int(args[3])))
+
+    mydb.execute("INSERT INTO roleReacts (messageId, roleId, react) VALUES " + "('{}','{}','{}')".format(messageId, roleId, args[3] if bool(emoji.get_emoji_regexp().search(args[3])) else int(args[3])), commit=True)
     await ctx.send(mydb.select("SELECT * FROM roleReacts WHERE messageId = '{}'".format(messageId)))
 
 def getReactRoleId(messageId, react):
