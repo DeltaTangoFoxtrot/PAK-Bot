@@ -54,6 +54,8 @@ dbDatabase = config["db"]["database"]
 dbUser = config["db"]["user"]
 dbPassword = config["db"]["password"]
 
+logChannelId = config["logChannelId"]
+
 create_roleReacts = """CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) 
     ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;"""
     
@@ -185,5 +187,24 @@ async def on_raw_reaction_remove(payload):
     if roleId:
         role = guild.get_role(int(roleId))
         await member.remove_roles(role)
+
+@bot.event
+async def on_message_delete(message):
+    if message.author.bot : return
+    
+    embed=discord.Embed(title="{} deleted a message".format(message.author.name), description="")
+    embed.add_field(name= message.content, value="Message", inline=True)
+    channel=bot.get_channel(logChannelId)
+    await channel.send(channel, embed=embed)
+
+@bot.event
+async def on_message_edit(message_before, message_after):
+    if message_before.author.bot: return
+    
+    embed=discord.Embed(title="{} edited a message".format(message_before.author.name), description="")
+    embed.add_field(name= message_before.content ,value="Before edit", inline=True)
+    embed.add_field(name= message_after.content ,value="After edit", inline=True)
+    channel=bot.get_channel(logChannelId)
+    await channel.send(channel, embed=embed)
 
 bot.run(discordToken)
