@@ -193,9 +193,12 @@ async def on_message_delete(message):
     if message.author.bot : return
     
     embed=discord.Embed(title="{} deleted a message".format(message.author.name), description="")
-    embed.add_field(name= message.content, value="Message", inline=True)
+    if message.content:
+        embed.add_field(name= message.content, value="Message", inline=True)
+    if len(message.attachments):
+        embed.set_image(url=message.attachments[0].proxy_url)
     channel=bot.get_channel(logChannelId)
-    await channel.send(channel, embed=embed)
+    await channel.send(embed=embed)
 
 @bot.event
 async def on_message_edit(message_before, message_after):
@@ -206,6 +209,6 @@ async def on_message_edit(message_before, message_after):
     embed.add_field(name= message_before.content ,value="Before edit", inline=True)
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
     channel=bot.get_channel(logChannelId)
-    await channel.send(channel, embed=embed)
+    await channel.send(embed=embed)
 
 bot.run(discordToken)
