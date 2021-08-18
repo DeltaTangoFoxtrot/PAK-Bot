@@ -3,6 +3,7 @@ import mysql.connector
 import re
 import sys
 import emoji
+from pathlib import Path
 
 import discord
 from discord.ext import commands
@@ -149,6 +150,15 @@ def getReactRoleId(messageId, react):
         mydb.execute(create_sp_getReactRoleId)
     result = mydb.callproc("sp_getReactRoleId", [messageId, react, 0])
     return result[2]
+
+@bot.command()
+def etiquette(ctx)
+    try:
+        with open('etiquette.txt') as f:
+            message = f.read()
+        await ctx.send(message)
+    except:
+        await ctx.send("No etiquette file defined")
 
 @bot.event
 async def on_raw_reaction_add(payload):
