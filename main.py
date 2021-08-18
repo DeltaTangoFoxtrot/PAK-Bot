@@ -4,6 +4,7 @@ import re
 import sys
 import emoji
 from datetime import datetime
+from pathlib import Path
 
 import discord
 from discord.ext import commands
@@ -180,6 +181,13 @@ async def remove_from_author(ctx, *args):
 
     await ctx.send("Deleted {} messages from {} to {}".format(counter, after if after else "beginning of time", before if before else "end of time"))
 
+def etiquette(ctx)
+    try:
+        with open('etiquette.txt') as f:
+            message = f.read()
+        await ctx.send(message)
+    except:
+        await ctx.send("No etiquette file defined")
 
 @bot.event
 async def on_raw_reaction_add(payload):
