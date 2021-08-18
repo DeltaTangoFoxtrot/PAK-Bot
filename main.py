@@ -181,7 +181,7 @@ async def remove_from_author(ctx, *args):
 
     await ctx.send("Deleted {} messages from {} to {}".format(counter, after if after else "beginning of time", before if before else "end of time"))
 
-def etiquette(ctx)
+def etiquette(ctx):
     try:
         with open('etiquette.txt') as f:
             message = f.read()
