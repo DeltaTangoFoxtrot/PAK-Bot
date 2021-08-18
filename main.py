@@ -3,6 +3,7 @@ import mysql.connector
 import re
 import sys
 import emoji
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -149,6 +150,36 @@ def getReactRoleId(messageId, react):
         mydb.execute(create_sp_getReactRoleId)
     result = mydb.callproc("sp_getReactRoleId", [messageId, react, 0])
     return result[2]
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def remove_from_author(ctx, *args):
+    channel = bot.get_channel(int(args[0]))
+    if not channel:
+        await ctx.send("could not get channel")
+        return
+    
+    member = await bot.fetch_user(int(args[1]))
+    if not member:
+        await ctx.send("could not get member")
+        return
+
+    await ctx.send("Deleting messages in {} from {}".format(channel.name, member.name))
+
+    def format_dt(dt):
+        return datetime.strptime(dt, '%m/%d/%y')
+
+    after = format_dt(args[2]) if 2 < len(args) else None
+    before = format_dt(args[3]) if 3 < len(args) else None
+
+    counter = 0
+    async for message in channel.history(limit=None,before=before,after=after):
+        if message.author == member:
+            await message.delete()
+            counter += 1
+
+    await ctx.send("Deleted {} messages from {} to {}".format(counter, after if after else "beginning of time", before if before else "end of time"))
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
