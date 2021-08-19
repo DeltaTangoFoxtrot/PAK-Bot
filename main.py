@@ -190,6 +190,11 @@ async def etiquette(ctx):
     except:
         await ctx.send("No etiquette file defined")
 
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def getrolemembers(ctx, role: discord.Role):
+    await ctx.send("\n".join(str(role) for role in role.members)
+    
 @bot.event
 async def on_raw_reaction_add(payload):
     channel = bot.get_channel(payload.channel_id)
