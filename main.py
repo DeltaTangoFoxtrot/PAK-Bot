@@ -200,9 +200,28 @@ async def getrolemembers(ctx, role: discord.Role):
     await ctx.send(url)
 
 @bot.command()
+@commands.has_permissions(administrator=True)
+async def mutesetup(ctx)
+    guild = ctx.guild
+    role = discord.utils.get(guild.roles, name="Muted")
+    
+    if not role:
+        role = await guild.create_role(name="Muted")
+    
+    for channel in guild.channels:
+        await channel.set_permissions(mutedRole, speak=False, send_messages=False, read_message_history=True, read_messages=False)
+
+@bot.command()
 @commands.has_permissions(manage_romessages=True)
-async def mute(ctx member: discord.Member)
-    role = discord.utils.get(member.server.roles, name='Muted')
+async def mute(ctx, member: discord.Member)
+    role = discord.utils.get(guild.roles, name="Muted")
+
+    if not role:
+        role = await guild.create_role(name="Muted")
+
+        for channel in guild.channels:
+            await channel.set_permissions(mutedRole, speak=False, send_messages=False, read_message_history=True, read_messages=False)
+    
     await member.add_roles(role)
     embed=discord.Embed(title="User Muted", description="**{0}** was muted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
     await bot.say(embed=embed)
