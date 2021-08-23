@@ -209,7 +209,7 @@ async def mutesetup(ctx):
         role = await guild.create_role(name="Muted")
     
     for channel in guild.channels:
-        await channel.set_permissions(role, speak=False, send_messages=False, read_message_history=True, read_messages=True)
+        await channel.set_permissions(role, speak=False, send_messages=False, read_message_history=True, read_messages=False)
         
     await ctx.send("Permissions set for Muted role")
 
