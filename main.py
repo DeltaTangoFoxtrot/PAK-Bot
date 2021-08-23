@@ -210,6 +210,8 @@ async def mutesetup(ctx)
     
     for channel in guild.channels:
         await channel.set_permissions(mutedRole, speak=False, send_messages=False, read_message_history=True, read_messages=False)
+        
+    await bot.say("Permissions set for Muted role")
 
 @bot.command()
 @commands.has_permissions(manage_romessages=True)
