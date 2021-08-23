@@ -201,7 +201,7 @@ async def getrolemembers(ctx, role: discord.Role):
 
 @bot.command()
 @commands.has_permissions(administrator=True)
-async def mutesetup(ctx)
+async def mutesetup(ctx):
     guild = ctx.guild
     role = discord.utils.get(guild.roles, name="Muted")
     
@@ -209,32 +209,35 @@ async def mutesetup(ctx)
         role = await guild.create_role(name="Muted")
     
     for channel in guild.channels:
-        await channel.set_permissions(mutedRole, speak=False, send_messages=False, read_message_history=True, read_messages=False)
+        await channel.set_permissions(role, speak=False, send_messages=False, read_message_history=True, read_messages=False)
         
-    await bot.say("Permissions set for Muted role")
+    await ctx.send("Permissions set for Muted role")
 
 @bot.command()
-@commands.has_permissions(manage_romessages=True)
-async def mute(ctx, member: discord.Member)
+@commands.has_permissions(manage_messages=True)
+async def mute(ctx, member: discord.Member):
+    guild = ctx.guild
     role = discord.utils.get(guild.roles, name="Muted")
 
     if not role:
         role = await guild.create_role(name="Muted")
 
         for channel in guild.channels:
-            await channel.set_permissions(mutedRole, speak=False, send_messages=False, read_message_history=True, read_messages=False)
+            await channel.set_permissions(role, speak=False, send_messages=False, read_message_history=True, read_messages=False)
     
     await member.add_roles(role)
     embed=discord.Embed(title="User Muted", description="**{0}** was muted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
-    await bot.say(embed=embed)
+    await ctx.send(embed=embed)
     
 @bot.command()
-@commands.has_permissions(manage_romessages=True)
-async def unmute(ctx member: discord.Member)
-    role = discord.utils.get(member.server.roles, name='Muted')
+@commands.has_permissions(manage_messages=True)
+async def unmute(ctx, member: discord.Member):
+    guild = ctx.guild
+    role = discord.utils.get(guild.roles, name="Muted")
+
     await member.remove_roles(role)
     embed=discord.Embed(title="User Unmuted", description="**{0}** was unmuted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
-    await bot.say(embed=embed)
+    await ctx.send(embed=embed)
     
 @bot.event
 async def on_raw_reaction_add(payload):
