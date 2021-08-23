@@ -194,6 +194,22 @@ async def etiquette(ctx):
 @commands.has_permissions(administrator=True)
 async def getrolemembers(ctx, role: discord.Role):
     await ctx.send("\n".join(str(role) for role in role.members)
+
+@bot.command()
+@commands.has_permissions(manage_romessages=True)
+async def mute(ctx member: discord.Member)
+    role = discord.utils.get(member.server.roles, name='Muted')
+    await member.add_roles(role)
+    embed=discord.Embed(title="User Muted", description="**{0}** was muted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
+    await bot.say(embed=embed)
+    
+@bot.command()
+@commands.has_permissions(manage_romessages=True)
+async def unmute(ctx member: discord.Member)
+    role = discord.utils.get(member.server.roles, name='Muted')
+    await member.remove_roles(role)
+    embed=discord.Embed(title="User Unmuted", description="**{0}** was unmuted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
+    await bot.say(embed=embed)
     
 @bot.event
 async def on_raw_reaction_add(payload):
