@@ -9,6 +9,8 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 
+import pastebin3
+
 class dbConnection:
     def __init__(self, host, database, user, password):
         self.db = mysql.connector.connect(host=host, user=user, password=password, database=database)
@@ -58,6 +60,8 @@ dbPassword = config["db"]["password"]
 
 logChannelId = config["logChannelId"]
 
+pastebinApiKey = config["pastebinApiKey"]
+
 create_roleReacts = """CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) 
     ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;"""
     
@@ -76,8 +80,6 @@ intents.members = True
 
 mydb = dbConnection(dbHost, dbDatabase, dbUser, dbPassword)
 bot = commands.Bot(command_prefix='!', intents=intents)
-
-
 
 @bot.command()
 async def ping(ctx):
@@ -193,8 +195,10 @@ async def etiquette(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def getrolemembers(ctx, role: discord.Role):
-    await ctx.send("\n".join(str(role) for role in role.members)
-    
+    members = "\n".join(str(member) for member in role.members)
+    url = pastebin3.paste(pastebinApiKey, members, private = "unlisted", expire_date='10M')
+    await ctx.send(url)
+
 @bot.event
 async def on_raw_reaction_add(payload):
     channel = bot.get_channel(payload.channel_id)

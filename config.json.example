@@ -7,4 +7,5 @@
 		"password" : "bar"
 	},
 	"logChannelId" : 0
+	"pastebinApiKey" : ""
 }
