@@ -260,7 +260,7 @@ async def names(ctx, member: discord.Member = None):
     if len(result) == 0:
         await ctx.send("No previous names found for user")
     else:
-        await ctx.send("Account Change | Old Name\n" + "\n".join([f"{'true' if name[0] == 1 else 'false'} | {name[1].decode()}" for name in results]))
+        await ctx.send("Account Change | Old Name\n" + "\n".join([f"{'true' if name[0] == 1 else 'false'} | {name[1].decode()}" for name in result]))
   
 @bot.event
 async def on_raw_reaction_add(payload):
