@@ -249,13 +249,13 @@ async def unmute(ctx, member: discord.Member):
     await ctx.send(embed=embed)
 
 @bot.command()
-def names(ctx, member: discord.Member):
+async def names(ctx, member: discord.Member):
     mydb.execute(create_memberNames)
     result = mydb.select(select_memberNames, (member.id,))
-    if len(results) == 0:
-        ctx.send("No previous names found for user")
+    if len(result) == 0:
+        await ctx.send("No previous names found for user")
     else:
-        ctx.send(result)
+        await ctx.send(result)
   
 @bot.event
 async def on_raw_reaction_add(payload):
