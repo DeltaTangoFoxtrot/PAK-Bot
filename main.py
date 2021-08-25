@@ -329,7 +329,7 @@ def save_member_name_change(userId, isAccountChange, before):
 
 @bot.event
 async def on_member_update(member_before, member_after):
-    if member_before.nick != member_after.nick:
+    if member_before.nick and member_before.nick != member_after.nick:
         save_member_name_change(member_before.id, 0, member_before.nick)
         
 @bot.event
