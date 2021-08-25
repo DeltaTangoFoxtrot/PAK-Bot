@@ -29,11 +29,14 @@ class dbConnection:
             return result
         except mysql.connector.Error as err:
             return err.msg
-    def execute(self, query, commit=False):
+    def execute(self, query, parameters = None, commit=False):
         try:
             self.db.connect()
             cursor = self.db.cursor()
-            cursor.execute(query)
+            if parameters:
+                cursor.execute(query, parameters)
+            else:
+                cursor.execute(query)
             if commit:
                 self.db.commit()
             cursor.close()
@@ -320,7 +323,7 @@ async def on_message_edit(message_before, message_after):
 
 def save_member_name_change(userId, isAccountChange, before):
     mydb.execute(create_memberNames)
-    result = mydb.execute(insert_memberNames, (userId, isAccountChange, before))
+    result = mydb.execute(insert_memberNames, (userId, isAccountChange, before), True)
 
 @bot.event
 async def on_member_update(member_before, member_after):
