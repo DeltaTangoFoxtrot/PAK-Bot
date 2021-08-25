@@ -252,7 +252,9 @@ async def unmute(ctx, member: discord.Member):
     await ctx.send(embed=embed)
 
 @bot.command()
-async def names(ctx, member: discord.Member):
+async def names(ctx, member: discord.Member = None):
+    if not member:
+        member = ctx.message.author
     mydb.execute(create_memberNames)
     result = mydb.select(select_memberNames, (member.id,))
     if len(result) == 0:
