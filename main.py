@@ -15,11 +15,14 @@ class dbConnection:
     def __init__(self, host, database, user, password):
         self.db = mysql.connector.connect(host=host, user=user, password=password, database=database)
         self.db.close()
-    def select(self, query):
+    def select(self, query, parameters = None):
         try:
             self.db.connect()
             cursor = self.db.cursor()
-            cursor.execute(query)
+            if parameters:
+                cursor.execute(query, parameters)
+            else:
+                cursor.execute(query)
             result = cursor.fetchall()
             cursor.close()
             self.db.close()
@@ -74,6 +77,12 @@ create_sp_getReactRoleId = """CREATE PROCEDURE sp_getReactRoleId (IN messageId v
         WHERE roleReacts.messageId = messageId AND roleReacts.react = react
         LIMIT 1;
     END"""
+
+create_memberNames = """CREATE TABLE IF NOT EXISTS memberNames (userId TEXT, isAccountChange BOOL, newName TEXT)"""
+
+insert_memberNames = """INSERT INTO memberNames(userId, isAccountChange, newName) SELECT %s, %s, %s"""
+
+select_memberNames = """SELECT memberNames.isAccountChange, memberNames.newName FROM memberNames WHERE memberNames.userId = %s"""
 
 intents = discord.Intents.default()
 intents.members = True
@@ -238,7 +247,16 @@ async def unmute(ctx, member: discord.Member):
     await member.remove_roles(role)
     embed=discord.Embed(title="User Unmuted", description="**{0}** was unmuted by **{1}**".format(member, ctx.message.author), color=0xff00f6)
     await ctx.send(embed=embed)
-    
+
+@bot.command()
+def names(ctx, member: discord.Member):
+    mydb.execute(create_memberNames)
+    result = mydb.select(select_memberNames, (member.id,))
+    if len(results) == 0:
+        ctx.send("No previous names found for user")
+    else:
+        ctx.send(result)
+  
 @bot.event
 async def on_raw_reaction_add(payload):
     channel = bot.get_channel(payload.channel_id)
@@ -299,5 +317,19 @@ async def on_message_edit(message_before, message_after):
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
     channel=bot.get_channel(logChannelId)
     await channel.send(embed=embed)
+
+def save_member_name_change(userId, isAccountChange, before):
+    mydb.execute(create_memberNames)
+    result = mydb.execute(insert_memberNames, (userId, isAccountChange, before))
+
+@bot.event
+async def on_member_update(member_before, member_after):
+    if member_before.nick != member_after.nick:
+        save_member_name_change(member_before.id, 0, member_before.nick)
+        
+@bot.event
+async def on_user_update(user_before, user_after):
+    if user_before.name != user_after.name:
+        save_member_name_change(user_before.id, 1, user_before.name)
 
 bot.run(discordToken)
