@@ -315,7 +315,7 @@ async def on_message_edit(message_before, message_after):
     if message_before.author.bot: return
     if message_before.content == message_after.content: return
 
-    embed=discord.Embed(title="{} edited a message in {}".format(message_before.author.name, message.channel), description="")
+    embed=discord.Embed(title="{} edited a message in {}".format(message_before.author.name, message_before.channel), description="")
     embed.add_field(name= message_before.content ,value="Before edit", inline=True)
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
     channel=message_before.guild.system_channel
