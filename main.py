@@ -340,11 +340,11 @@ async def on_user_update(user_before, user_after):
 @bot.event
 async def on_member_remove(member):
     channel = member.guild.system_channel
-    await channel.send("{} left server".format(member.name))
+    await channel.send("{} left server".format(member.mention))
     
 @bot.event
 async def on_member_ban(guild, member):
     channel = guild.system_channel
-    await channel.send("{} banned from server".format(member.name))
+    await channel.send("{} banned from server".format(member.mention))
 
 bot.run(discordToken)
