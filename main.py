@@ -64,8 +64,6 @@ dbDatabase = config["db"]["database"]
 dbUser = config["db"]["user"]
 dbPassword = config["db"]["password"]
 
-logChannelId = config["logChannelId"]
-
 pastebinApiKey = config["pastebinApiKey"]
 
 create_roleReacts = """CREATE TABLE IF NOT EXISTS roleReacts (messageId VARCHAR(100), roleId VARCHAR(100), react VARCHAR(100)) 
@@ -309,7 +307,7 @@ async def on_message_delete(message):
         embed.add_field(name= message.content, value="Message", inline=True)
     if len(message.attachments):
         embed.set_image(url=message.attachments[0].proxy_url)
-    channel=bot.get_channel(logChannelId)
+    channel=message.guild.system_channel
     await channel.send(embed=embed)
 
 @bot.event
@@ -320,7 +318,7 @@ async def on_message_edit(message_before, message_after):
     embed=discord.Embed(title="{} edited a message".format(message_before.author.name), description="")
     embed.add_field(name= message_before.content ,value="Before edit", inline=True)
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
-    channel=bot.get_channel(logChannelId)
+    channel=message.guild.system_channel
     await channel.send(embed=embed)
 
 def save_member_name_change(userId, isAccountChange, before):
