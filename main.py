@@ -302,7 +302,7 @@ async def on_raw_reaction_remove(payload):
 async def on_message_delete(message):
     if message.author.bot : return
     
-    embed=discord.Embed(title="{} deleted a message".format(message.author.name), description="")
+    embed=discord.Embed(title="{} deleted a message in {}".format(message.author.name, message.channel), description="")
     if message.content:
         embed.add_field(name= message.content, value="Message", inline=True)
     if len(message.attachments):
@@ -315,7 +315,7 @@ async def on_message_edit(message_before, message_after):
     if message_before.author.bot: return
     if message_before.content == message_after.content: return
 
-    embed=discord.Embed(title="{} edited a message".format(message_before.author.name), description="")
+    embed=discord.Embed(title="{} edited a message in {}".format(message_before.author.name, message.channel), description="")
     embed.add_field(name= message_before.content ,value="Before edit", inline=True)
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
     channel=message_before.guild.system_channel
