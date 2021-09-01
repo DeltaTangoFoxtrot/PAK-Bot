@@ -318,7 +318,7 @@ async def on_message_edit(message_before, message_after):
     embed=discord.Embed(title="{} edited a message".format(message_before.author.name), description="")
     embed.add_field(name= message_before.content ,value="Before edit", inline=True)
     embed.add_field(name= message_after.content ,value="After edit", inline=True)
-    channel=message.guild.system_channel
+    channel=message_before.guild.system_channel
     await channel.send(embed=embed)
 
 def save_member_name_change(userId, isAccountChange, before):
