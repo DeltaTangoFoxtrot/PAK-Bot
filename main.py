@@ -336,5 +336,15 @@ async def on_member_update(member_before, member_after):
 async def on_user_update(user_before, user_after):
     if user_before.name != user_after.name:
         save_member_name_change(user_before.id, 1, user_before.name)
+        
+@bot.event
+async def on_member_remove(member):
+    channel = member.guild.system_channel
+    await channel.send("%s left server".format(member.name))
+    
+@bot.event
+async def on_member_ban(guild, member):
+    channel = guild.system_channel
+    await channel.send("%s banned from server".format(member.name))
 
 bot.run(discordToken)
